@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-
+import logging
 try:
     import ConfigParser
 except ImportError:
     import configparser as ConfigParser
-import logging
+
 
 STATES = {
     'enabled': {
@@ -41,19 +41,16 @@ def get_config(config_file=CONFIG_FILE):
         'user': parser.get('webserver', 'user'),
         'group': parser.get('webserver', 'group'),
         'web_log_file': parser.get('webserver', 'logfile'),
-        'web_log_level': getattr(logging,
-                                 parser.get('webserver', 'loglevel')),
+        'web_log_level': parser.get('webserver', 'loglevel'),
         'web_log_filesize': parser.getint('webserver', 'filesize'),
         'web_log_rotation_count': parser.getint('webserver', 'rotationcount'),
         'log_file': parser.get('logging', 'logfile'),
-        'log_level': getattr(logging,
-                             parser.get('logging', 'loglevel')),
+        'log_level': parser.get('logging', 'loglevel'),
         'log_filesize': parser.getint('logging', 'filesize'),
         'log_rotation_count': parser.getint('logging', 'rotationcount')
     }
-    logger = logging.getLogger('plight')
-    logger.setLevel(config['log_level'])
-    config['states'] = process_states_from_config(parser, logger)
+    applogger = logging.getLogger('plight')
+    config['states'] = process_states_from_config(parser, applogger)
     return config
 
 

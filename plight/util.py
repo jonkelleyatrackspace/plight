@@ -18,34 +18,18 @@ try:
 except ImportError:
     from daemon.pidfile import PIDLockFile
 import logging
-from logging.handlers import RotatingFileHandler
 import plight
 import plight.config as plconfig
+import plight.log
+
 
 PID = PIDLockFile(plconfig.PID_FILE)
+CONFIG = plconfig.get_config()
 
 
 def start_server(config):
     weblogger = logging.getLogger('plight_httpd')
-    weblogger.setLevel(config['web_log_level'])
-    if weblogger.handlers == []:
-        weblogging_handler = RotatingFileHandler(config['web_log_file'],
-                                                 mode='a',
-                                                 maxBytes=config[
-                                                     'web_log_filesize'],
-                                                 backupCount=config[
-                                                     'web_log_rotation_count'])
-        weblogger.addHandler(weblogging_handler)
-
     applogger = logging.getLogger('plight')
-    applogger.setLevel(config['log_level'])
-    if applogger.handlers == []:
-        applogging_handler = RotatingFileHandler(
-            config['log_file'],
-            mode='a',
-            maxBytes=config['log_filesize'],
-            backupCount=config['log_rotation_count'])
-        applogger.addHandler(applogging_handler)
 
     # if pidfile is locked, do not start another process
     if PID.is_locked():
@@ -56,11 +40,11 @@ def start_server(config):
                             uid=pwd.getpwnam(config['user']).pw_uid,
                             gid=grp.getgrnam(config['group']).gr_gid,
                             files_preserve=[
-                                weblogging_handler.stream,
-                                applogging_handler.stream,
+                                weblogger.handlers[0].stream,
+                                applogger.handlers[0].stream,
                             ],)
-    context.stdout = applogging_handler.stream
-    context.stderr = applogging_handler.stream
+    context.stdout = applogger.handlers[0].stream
+    context.stderr = applogger.handlers[0].stream
     context.open()
     os.umask(0o022)
 

@@ -23,6 +23,9 @@ except ImportError:
 
 import plight.config as plconfig
 
+CONFIG = plconfig.get_config()
+
+
 class StatusHTTPRequestHandler(SimpleHTTPRequestHandler, object):
 
     """Status HTTP Request handler
@@ -49,7 +52,7 @@ class StatusHTTPRequestHandler(SimpleHTTPRequestHandler, object):
         This will return the NodeStatus object for this object
         """
         if self._node_status is None:
-            states = plconfig.get_config()['states']
+            states = CONFIG['states']
             self._node_status = NodeStatus(states)
         return self._node_status
 
@@ -155,7 +158,7 @@ class NodeStatus(Singleton):
     _default_state = None
 
     def __init__(self, states=plconfig.STATES):
-        self._applogger = logging.getLogger('plight')
+        self.get_app_logger()
         self.states = states
         self._commands = {}
         for (state, state_data) in self.states.items():
@@ -258,6 +261,7 @@ class NodeStatus(Singleton):
                 self.get_node_state()
             state = self.state
         return self.states[state][detail]
+
 
 def compare_priority(states, state1, state2):
     return states[state1]['priority'] < states[state2]['priority']
