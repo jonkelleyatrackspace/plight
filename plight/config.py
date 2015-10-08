@@ -4,6 +4,10 @@ try:
     import ConfigParser
 except ImportError:
     import configparser as ConfigParser
+try:
+    from daemon.pidlockfile import PIDLockFile
+except ImportError:
+    from daemon.pidfile import PIDLockFile
 
 
 STATES = {
@@ -51,6 +55,7 @@ def get_config(config_file=CONFIG_FILE):
     }
     applogger = logging.getLogger('plight')
     config['states'] = process_states_from_config(parser, applogger)
+    config['PID'] = PIDLockFile(PID_FILE)
     return config
 
 

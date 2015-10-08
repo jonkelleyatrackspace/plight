@@ -13,18 +13,10 @@ try:
 except ImportError:
     import http.server as BaseHTTPServer
 from daemon import DaemonContext
-try:
-    from daemon.pidlockfile import PIDLockFile
-except ImportError:
-    from daemon.pidfile import PIDLockFile
 import logging
 import plight
+from plight.log import start_logging
 import plight.config as plconfig
-import plight.log
-
-
-PID = PIDLockFile(plconfig.PID_FILE)
-CONFIG = plconfig.get_config()
 
 
 def start_server(config):
@@ -32,11 +24,11 @@ def start_server(config):
     applogger = logging.getLogger('plight')
 
     # if pidfile is locked, do not start another process
-    if PID.is_locked():
+    if config['PID'].is_locked():
         sys.stderr.write('Plight is already running\n')
         sys.exit(1)
 
-    context = DaemonContext(pidfile=PID,
+    context = DaemonContext(pidfile=config['PID'],
                             uid=pwd.getpwnam(config['user']).pw_uid,
                             gid=grp.getgrnam(config['group']).gr_gid,
                             files_preserve=[
@@ -72,18 +64,15 @@ def log_message(message):
                     message))
 
 
-def stop_server():
-    if PID.is_locked():
-        pid = PID.read_pid()
+def stop_server(config):
+    if config['PID'].is_locked():
+        pid = config['PID'].read_pid()
         os.kill(int(pid), signal.SIGTERM)
     else:
         print('no pid file available')
 
 
-def format_get_current_state(state, details):
-    warning = ''
-    if not PID.is_locked():
-        warning = 'WARNING: plight is not running\n'
+def format_get_current_state(state, details, warning):
     message = '{0}State: {1}\nCode: {2}\nMessage: {3}\n'
     sys.stdout.write(
         message.format(warning, state, details['code'], details['message']))
@@ -109,7 +98,8 @@ def cli_fail(commands):
 
 def run():
     config = plconfig.get_config()
-    node = plight.NodeStatus(states=config['states'])
+    start_logging(config)
+    node = plight.NodeStatus(config)
 
     try:
         mode = sys.argv[1].lower()
@@ -123,10 +113,13 @@ def run():
     elif mode == 'start':
         start_server(config)
     elif mode == 'status':
-        format_get_current_state(node.state, config['states'][node.state])
+        warning = ''
+        if not config['PID'].is_locked():
+            warning = 'WARNING: plight is not running\n'
+        format_get_current_state(node.state, config['states'][node.state], warning)
     elif mode == 'list-states':
         format_list_states(node._default_state, config['states'])
     elif mode == 'stop':
-        stop_server()
+        stop_server(config)
     else:
         cli_fail(node._commands)

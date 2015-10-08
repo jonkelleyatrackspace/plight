@@ -21,10 +21,6 @@ except ImportError:
     from http.server import test as http_server_test
     from http.server import SimpleHTTPRequestHandler
 
-import plight.config as plconfig
-
-CONFIG = plconfig.get_config()
-
 
 class StatusHTTPRequestHandler(SimpleHTTPRequestHandler, object):
 
@@ -45,6 +41,12 @@ class StatusHTTPRequestHandler(SimpleHTTPRequestHandler, object):
     _weblogger = None
     _applogger = None
     _node_status = None
+    _states = None
+
+    def __init__(self, config):
+        self._states = config.get('states', False)
+        if not self._states:
+            raise Exception('States could not be loaded from config file')
 
     def get_node_status(self):
         """Get node status object
@@ -52,8 +54,7 @@ class StatusHTTPRequestHandler(SimpleHTTPRequestHandler, object):
         This will return the NodeStatus object for this object
         """
         if self._node_status is None:
-            states = CONFIG['states']
-            self._node_status = NodeStatus(states)
+            self._node_status = NodeStatus(self._states)
         return self._node_status
 
     def get_web_logger(self):
@@ -156,12 +157,13 @@ class NodeStatus(Singleton):
     """
     _applogger = None
     _default_state = None
+    _states = None
 
-    def __init__(self, states=plconfig.STATES):
+    def __init__(self, config):
         self.get_app_logger()
-        self.states = states
+        self._states = config['states']
         self._commands = {}
-        for (state, state_data) in self.states.items():
+        for (state, state_data) in self._states.items():
             if state_data['file'] is None:
                 if getattr(self, '_default_state') is not None:
                     raise Exception('More than 1 state with undefined file')
@@ -172,7 +174,7 @@ class NodeStatus(Singleton):
         self.get_node_state()
 
     def set_state_file(self, state, state_file):
-        self.states[state]['file'] = state_file
+        self._states[state]['file'] = state_file
 
     def get_app_logger(self):
         """Get app logger
@@ -185,7 +187,7 @@ class NodeStatus(Singleton):
     # Operable Functions
     def _clear_state_files(self):
         """Clear out all the active state files, resetting to default state"""
-        for (state, state_data) in self.states.items():
+        for (state, state_data) in self._states.items():
             if state_data['file'] is None:
                 continue
             if os.path.exists(state_data['file']):
@@ -227,14 +229,14 @@ class NodeStatus(Singleton):
         This can be used to toggle the state of the node
         """
         state = state.lower()
-        if state not in self.states:
+        if state not in self._states:
             if state in self._commands:
                 state = self._commands[state]
             else:
                 raise Exception('Unknown state ({0}) requested'.format(state))
         self._clear_state_files()
-        if self.states[state]['file'] is not None:
-            open(self.states[state]['file'], 'a').close()
+        if self._states[state]['file'] is not None:
+            open(self._states[state]['file'], 'a').close()
         return self.get_node_state()
 
     def get_node_state(self):
@@ -245,10 +247,10 @@ class NodeStatus(Singleton):
         """
         active_states = {}
         current_state = self._default_state
-        for (state, state_data) in self.states.items():
+        for (state, state_data) in self._states.items():
             value = check_state(state_data['file'])
             active_states[state] = value
-            if value and compare_priority(self.states, current_state, state):
+            if value and compare_priority(self._states, current_state, state):
                 current_state = state
         if current_state == self._default_state:
             active_states[current_state] = not any(active_states.values())
@@ -260,7 +262,7 @@ class NodeStatus(Singleton):
             if self.state is None:
                 self.get_node_state()
             state = self.state
-        return self.states[state][detail]
+        return self._states[state][detail]
 
 
 def compare_priority(states, state1, state2):

@@ -20,9 +20,10 @@ def test_running_format_get_current_state(capsys, states, pidfile):
         pidfile.acquire()
     check = ''
     for state, details in states.items():
+        warning = ''
         message = 'State: {0}\nCode: {1}\nMessage: {2}\n'
         check = message.format(state, details['code'], details['message'])
-        util.format_get_current_state(state, details)
+        util.format_get_current_state(state, details, warning)
         out, err = capsys.readouterr()
         assert out == check
     if pidfile.is_locked():
@@ -37,6 +38,6 @@ def test_stopped_format_get_current_state(capsys, states, pidfile):
         message = '{0}State: {1}\nCode: {2}\nMessage: {3}\n'
         check = message.format(
                     warning, state, details['code'], details['message'])
-        util.format_get_current_state(state, details)
+        util.format_get_current_state(state, details, warning)
         out, err = capsys.readouterr()
         assert out == check
