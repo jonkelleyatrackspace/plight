@@ -4,8 +4,8 @@
 %{!?_unitdir: %define _unitdir /usr/lib/systemd/system}
 
 Name:           plight
-Version:        0.0.4
-Release:        4%{?dist}
+Version:        0.0.5
+Release:        1%{?dist}
 Group:          Applications/Systems
 Summary:        Load balancer agnostic node state control service
 
@@ -115,6 +115,9 @@ fi
 %endif
 
 %changelog
+* Thu May 12 2016 Greg Swift <greg.swift@rackspace.com> - 0.0.5-1
+- Update daemon umask to unset world writeable from pid lock file
+
 * Fri Jan 09 2015 Chad Wilson <chad.wilson@rackspace.com> - 0.0.4-4
 - leave service restart on update to postuninstall scriptlet
 
