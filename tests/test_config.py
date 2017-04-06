@@ -4,6 +4,8 @@ def test_get_config(config):
     assert config['port'] == 10101
     assert config['web_log_file'] == '/var/log/plight/access.log'
     assert config['log_file'] == '/var/log/plight/plight.log'
+    assert config['lockfile_securemode'] == 0660
+
     if 'enabled' in config['states']:
         state = config['states']['enabled']
         assert state['file'] == None

@@ -36,6 +36,7 @@ logfile = /var/log/plight/access.log
 loglevel = INFO
 filesize = 1024000
 rotationcount = 10
+lockfile_securemode = 0660
 
 [logging]
 logfile = /var/log/plight/plight.log
@@ -73,6 +74,7 @@ logfile = /var/log/plight/access.log
 loglevel = INFO
 filesize = 1024000
 rotationcount = 10
+lockfile_securemode = 0660
 
 [logging]
 logfile = /var/log/plight/plight.log
