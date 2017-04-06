@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import os
+from shutil import chown
 import pwd
 import grp
 import sys
@@ -24,6 +25,35 @@ import plight.config as plconfig
 
 PID = PIDLockFile(plconfig.PID_FILE)
 
+def secure_pid_permissions(user, group, securemode=None):
+    """
+    This locks down tmp pid permission
+    Set the ownership and permissions of a file for hardened security.
+
+    user,group are passed in from parent, presumably using plight.config
+    securemode should be 4 digi int() describing the desired lockfile mode
+      if securemode=None then we entirely forgo securing owner, group, mode
+
+    return True if OK
+    return False if exceptions were thrown (look for logmsg)
+    """
+    secure=True
+    try:
+        if securemode:
+            os.chmod(PID.path, mode)
+    except Exception as e:
+        log_message("Exeption while setting octal permission on ``{0}``: {1}".format(PID.path, e))
+        secure=False
+
+    try:
+        if securemode:
+            chown(PID.path, user=user, group=group)
+    except Exception as e:
+        log_message("Exeption while setting file ownership on ``{0}``: {1}".format(PID.path, e))
+        secure=False
+
+    # it worked!
+    return secure
 
 def start_server(config):
     weblogger = logging.getLogger('plight_httpd')
@@ -59,9 +89,15 @@ def start_server(config):
                                 weblogging_handler.stream,
                                 applogging_handler.stream,
                             ],)
+
     context.stdout = applogging_handler.stream
     context.stderr = applogging_handler.stream
     context.open()
+    # Secures the lockfile/pid to the user/group and preferred mode
+    secure_pid_permissions(user=config['user'],
+        group=config['group'],
+        mode=config['pid_file_mode']
+        )
     os.umask(0o022)
 
     try:

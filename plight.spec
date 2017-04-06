@@ -4,7 +4,7 @@
 %{!?_unitdir: %define _unitdir /usr/lib/systemd/system}
 
 Name:           plight
-Version:        0.1.2
+Version:        0.2.0
 Release:        1%{?dist}
 Group:          Applications/Systems
 Summary:        Application agnostic tool to represent node availability.
@@ -118,6 +118,10 @@ fi
 %endif
 
 %changelog
+* Thu Apr 6 2017 Jonathan Kelley <jon.kelley@rackspace.com> - 0.2.0-1
+- Adding chown pidfile feature for securing pid files on compliance / enterprise systems.
+- Add shutil python standard module dependecy
+
 * Fri Jun 19 2015 Greg Swift <greg.swift@rackspace.com> - 0.1.2-1
 - Fixes to work better when singleton doesnt take, like on py2.6
 

@@ -35,6 +35,15 @@ PID_FILE = '/var/run/plight/plight.pid'
 def get_config(config_file=CONFIG_FILE):
     parser = ConfigParser.ConfigParser()
     parser.read(config_file)
+    try:
+        # python 2.x uses isinstance(s, basestring) and
+        # python 3.x uses isinstance(s, str) ((basestring is undefined))
+        # and ConfigParser.ConfigParser() doesn't have a default key option
+        pid_file_mode = parser.getint('webserver', 'pid_file_mode')
+    except:
+        # This is version agnostic.
+        pid_file_mode = False
+
     config = {
         'host': parser.get('webserver', 'host'),
         'port': parser.getint('webserver', 'port'),
@@ -45,6 +54,7 @@ def get_config(config_file=CONFIG_FILE):
                                  parser.get('webserver', 'loglevel')),
         'web_log_filesize': parser.getint('webserver', 'filesize'),
         'web_log_rotation_count': parser.getint('webserver', 'rotationcount'),
+        'pid_file_mode': pid_file_mode,
         'log_file': parser.get('logging', 'logfile'),
         'log_level': getattr(logging,
                              parser.get('logging', 'loglevel')),
