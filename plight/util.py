@@ -3,7 +3,6 @@
 from __future__ import print_function
 
 import os
-from shutil import chown
 import pwd
 import grp
 import sys
@@ -47,7 +46,9 @@ def secure_pid_permissions(user, group, securemode=None):
 
     try:
         if securemode:
-            chown(PID.path, user=user, group=group)
+            uid = pwd.getpwnam(user).pw_uid
+            gid = grp.getgrnam(group).gr_gid
+            os.chown(PID.path, uid, gid)
     except Exception as e:
         log_message("Exeption while setting file ownership on ``{0}``: {1}".format(PID.path, e))
         secure=False
@@ -96,7 +97,8 @@ def start_server(config):
     # Secures the lockfile/pid to the user/group and preferred mode
     secure_pid_permissions(user=config['user'],
         group=config['group'],
-        mode=config['pid_file_mode']
+        mode=config['pid_file_mode'],
+        securemode=config.get('pid_file_mode', None)
         )
     os.umask(0o022)
 
@@ -182,3 +184,4 @@ def run():
         stop_server()
     else:
         cli_fail(node._commands)
+
